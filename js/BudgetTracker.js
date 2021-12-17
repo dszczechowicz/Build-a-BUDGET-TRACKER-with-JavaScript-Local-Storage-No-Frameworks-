@@ -84,9 +84,36 @@ export default class BudgetTracker {
     this.updateSummary();
   }
 
-  updateSummary() {}
+  updateSummary() {
+    const total = this.getEntryRows().reduce((total, row) => {
+        const amount = row.querySelector(".input-amount").value;
+        const isExpense = row.querySelector(".input-type").value === "expense";
+        const modifier = isExpense ? -1 : 1;
 
-  save() {}
+        return total + (amount * modifier);
+    }, 0);
+
+    const totalFormatted = new Intl.NumberFormat("pl-PL", {
+        style: "currency",
+        currency: "PLN"
+    }).format(total);
+
+    this.root.querySelector(".total").textContent = totalFormatted;
+  }
+
+  save() {
+    const data = this.getEntryRows().map(row => {
+        return{
+            date: row.querySelector(".input-date").value,
+            description: row.querySelector(".input-description").value,
+            type: row.querySelector(".input-type").value,
+            amount: parseFloat(row.querySelector(".input-amount").value),
+        };
+    });
+
+    localStorage.setItem("budget-tracker-entries", JSON.stringify(data));
+    this.updateSummary();
+  }
 
   addEntry(entry = {}) {
       this.root.querySelector(".entries").insertAdjacentHTML("beforeend", BudgetTracker.entryHtml());
@@ -106,13 +133,16 @@ export default class BudgetTracker {
       });
   }
 
-  getEntryRows() {}
+  getEntryRows() {
+      return Array.from(this.root.querySelectorAll(".entries tr"));
+  }
 
   onNewEntryBtnClick() {
       this.addEntry();
   }
 
   onDeleteEntryBtnClick(e) {
-      console.log("entry deleted");
+      e.target.closest("tr").remove();
+      this.save();
   }
 }
